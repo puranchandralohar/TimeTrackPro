@@ -28,7 +28,7 @@ export function Header({ title }: HeaderProps) {
             <Sidebar />
           </SheetContent>
         </Sheet>
-        <h1 className="text-lg font-semibold text-primary">TimeTrack</h1>
+        <h1 className="text-lg font-semibold text-primary">Activity Tracker - AT 2.0</h1>
       </div>
       
       <div className="hidden md:block">
