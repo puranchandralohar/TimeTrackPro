@@ -2,7 +2,14 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertEmployeeSchema, insertTimeEntrySchema, insertProjectSchema } from "@shared/schema";
+import { 
+  insertEmployeeSchema, 
+  insertTimeEntrySchema, 
+  insertProjectSchema, 
+  insertLeaveApplicationSchema, 
+  insertLeaveTypeSchema, 
+  insertLeaveAllocationSchema
+} from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { format } from "date-fns";
@@ -311,6 +318,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     res.status(200).json({ message: "Time entry deleted successfully" });
+  });
+  
+  // ------ LEAVE MANAGEMENT ROUTES ------
+  
+  // Get all leave types
+  app.get("/api/leave-types", async (_req: Request, res: Response) => {
+    try {
+      const leaveTypes = await storage.getLeaveTypes();
+      res.status(200).json(leaveTypes);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
+  });
+  
+  // Get leave allocations for employee
+  app.get("/api/leave-allocations", async (req: Request, res: Response) => {
+    try {
+      // In a real app, we would get the employee ID from the session
+      const employeeId = parseInt(req.query.employeeId as string) || 1;
+      
+      const allocations = await storage.getLeaveAllocationsByEmployee(employeeId);
+      res.status(200).json(allocations);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
+  });
+  
+  // Get leave applications for employee
+  app.get("/api/leave-applications", async (req: Request, res: Response) => {
+    try {
+      // In a real app, we would get the employee ID from the session
+      const employeeId = parseInt(req.query.employeeId as string) || 1;
+      
+      const applications = await storage.getLeaveApplicationsByEmployee(employeeId);
+      res.status(200).json(applications);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
+  });
+  
+  // Create leave application
+  app.post("/api/leave-applications", async (req: Request, res: Response) => {
+    try {
+      // In a real app, we would get the employee ID from the session
+      const employeeId = parseInt(req.query.employeeId as string) || 1;
+      
+      // Ensure fromDate and toDate are in YYYY-MM-DD format
+      if (req.body.fromDate && typeof req.body.fromDate === 'string') {
+        try {
+          const date = new Date(req.body.fromDate);
+          req.body.fromDate = format(date, "yyyy-MM-dd");
+        } catch (error) {
+          return res.status(400).json({ message: "Invalid fromDate format" });
+        }
+      }
+      
+      if (req.body.toDate && typeof req.body.toDate === 'string') {
+        try {
+          const date = new Date(req.body.toDate);
+          req.body.toDate = format(date, "yyyy-MM-dd");
+        } catch (error) {
+          return res.status(400).json({ message: "Invalid toDate format" });
+        }
+      }
+      
+      // Ensure leaveTypeId is a number
+      if (req.body.leaveTypeId && typeof req.body.leaveTypeId === 'string') {
+        req.body.leaveTypeId = parseInt(req.body.leaveTypeId);
+      }
+      
+      const applicationData = insertLeaveApplicationSchema.parse({
+        ...req.body,
+        employeeId,
+        status: "pending" // Default status for new applications
+      });
+      
+      const application = await storage.createLeaveApplication(applicationData);
+      res.status(201).json(application);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
+  });
+  
+  // Update leave application status
+  app.put("/api/leave-applications/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid leave application ID" });
+      }
+      
+      const application = await storage.getLeaveApplication(id);
+      
+      if (!application) {
+        return res.status(404).json({ message: "Leave application not found" });
+      }
+      
+      // Validate and update
+      const updateSchema = insertLeaveApplicationSchema.partial();
+      const updateData = updateSchema.parse(req.body);
+      
+      const updatedApplication = await storage.updateLeaveApplication(id, updateData);
+      
+      if (!updatedApplication) {
+        return res.status(404).json({ message: "Leave application not found" });
+      }
+      
+      res.status(200).json(updatedApplication);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
+  });
+  
+  // Get leave summary for employee
+  app.get("/api/leave-summary", async (req: Request, res: Response) => {
+    try {
+      // In a real app, we would get the employee ID from the session
+      const employeeId = parseInt(req.query.employeeId as string) || 1;
+      
+      const summary = await storage.getEmployeeLeaveSummary(employeeId);
+      res.status(200).json(summary);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
   });
   
   // ------ SUMMARY ROUTES ------

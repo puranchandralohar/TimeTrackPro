@@ -1,7 +1,10 @@
 import { 
   employees, type Employee, type InsertEmployee,
   projects, type Project, type InsertProject,
-  timeEntries, type TimeEntry, type InsertTimeEntry
+  timeEntries, type TimeEntry, type InsertTimeEntry,
+  leaveTypes, type LeaveType, type InsertLeaveType,
+  leaveAllocations, type LeaveAllocation, type InsertLeaveAllocation,
+  leaveApplications, type LeaveApplication, type InsertLeaveApplication
 } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -27,6 +30,38 @@ export interface IStorage {
   updateTimeEntry(id: number, timeEntry: Partial<TimeEntry>): Promise<TimeEntry | undefined>;
   deleteTimeEntry(id: number): Promise<boolean>;
   
+  // Leave type methods
+  getLeaveType(id: number): Promise<LeaveType | undefined>;
+  getLeaveTypes(): Promise<LeaveType[]>;
+  createLeaveType(leaveType: InsertLeaveType): Promise<LeaveType>;
+  
+  // Leave allocation methods
+  getLeaveAllocation(id: number): Promise<LeaveAllocation | undefined>;
+  getLeaveAllocationsByEmployee(employeeId: number): Promise<(LeaveAllocation & { leaveType: LeaveType })[]>;
+  createLeaveAllocation(leaveAllocation: InsertLeaveAllocation): Promise<LeaveAllocation>;
+  updateLeaveAllocation(id: number, leaveAllocation: Partial<LeaveAllocation>): Promise<LeaveAllocation | undefined>;
+  
+  // Leave application methods
+  getLeaveApplication(id: number): Promise<LeaveApplication | undefined>;
+  getLeaveApplicationsByEmployee(employeeId: number): Promise<(LeaveApplication & { leaveType: LeaveType })[]>;
+  createLeaveApplication(leaveApplication: InsertLeaveApplication): Promise<LeaveApplication>;
+  updateLeaveApplication(id: number, leaveApplication: Partial<LeaveApplication>): Promise<LeaveApplication | undefined>;
+  
+  // Leave summary methods
+  getEmployeeLeaveSummary(employeeId: number): Promise<{
+    allocations: {
+      leaveType: LeaveType;
+      allocated: number;
+      used: number;
+      pending: number;
+      remaining: number;
+    }[];
+    totalAllocated: number;
+    totalUsed: number;
+    totalPending: number;
+    totalRemaining: number;
+  }>;
+  
   // Summary methods
   getEmployeeTimeSummary(employeeId: number): Promise<{
     todayHours: number;
@@ -41,17 +76,29 @@ export class MemStorage implements IStorage {
   private employees: Map<number, Employee>;
   private projects: Map<number, Project>;
   private timeEntries: Map<number, TimeEntry>;
+  private leaveTypes: Map<number, LeaveType>;
+  private leaveAllocations: Map<number, LeaveAllocation>;
+  private leaveApplications: Map<number, LeaveApplication>;
   private employeeIdCounter: number;
   private projectIdCounter: number;
   private timeEntryIdCounter: number;
+  private leaveTypeIdCounter: number;
+  private leaveAllocationIdCounter: number;
+  private leaveApplicationIdCounter: number;
 
   constructor() {
     this.employees = new Map();
     this.projects = new Map();
     this.timeEntries = new Map();
+    this.leaveTypes = new Map();
+    this.leaveAllocations = new Map();
+    this.leaveApplications = new Map();
     this.employeeIdCounter = 1;
     this.projectIdCounter = 1;
     this.timeEntryIdCounter = 1;
+    this.leaveTypeIdCounter = 1;
+    this.leaveAllocationIdCounter = 1;
+    this.leaveApplicationIdCounter = 1;
     
     // Seed some default data
     this.seedData();
@@ -203,6 +250,198 @@ export class MemStorage implements IStorage {
 
   async deleteTimeEntry(id: number): Promise<boolean> {
     return this.timeEntries.delete(id);
+  }
+
+  // Leave type methods
+  async getLeaveType(id: number): Promise<LeaveType | undefined> {
+    return this.leaveTypes.get(id);
+  }
+
+  async getLeaveTypes(): Promise<LeaveType[]> {
+    return Array.from(this.leaveTypes.values());
+  }
+
+  async createLeaveType(leaveType: InsertLeaveType): Promise<LeaveType> {
+    const id = this.leaveTypeIdCounter++;
+    const newLeaveType: LeaveType = {
+      ...leaveType,
+      id,
+      description: leaveType.description || null,
+      color: leaveType.color || null
+    };
+    this.leaveTypes.set(id, newLeaveType);
+    return newLeaveType;
+  }
+
+  // Leave allocation methods
+  async getLeaveAllocation(id: number): Promise<LeaveAllocation | undefined> {
+    return this.leaveAllocations.get(id);
+  }
+
+  async getLeaveAllocationsByEmployee(employeeId: number): Promise<(LeaveAllocation & { leaveType: LeaveType })[]> {
+    const allocations = Array.from(this.leaveAllocations.values())
+      .filter(allocation => allocation.employeeId === employeeId);
+    
+    return allocations.map(allocation => ({
+      ...allocation,
+      leaveType: this.leaveTypes.get(allocation.leaveTypeId)!
+    }));
+  }
+
+  async createLeaveAllocation(leaveAllocation: InsertLeaveAllocation): Promise<LeaveAllocation> {
+    const id = this.leaveAllocationIdCounter++;
+    const newAllocation: LeaveAllocation = {
+      ...leaveAllocation,
+      id,
+      createdAt: new Date()
+    };
+    this.leaveAllocations.set(id, newAllocation);
+    return newAllocation;
+  }
+
+  async updateLeaveAllocation(id: number, leaveAllocation: Partial<LeaveAllocation>): Promise<LeaveAllocation | undefined> {
+    const allocation = this.leaveAllocations.get(id);
+    if (!allocation) return undefined;
+    
+    const updatedAllocation = { ...allocation, ...leaveAllocation };
+    this.leaveAllocations.set(id, updatedAllocation);
+    return updatedAllocation;
+  }
+
+  // Leave application methods
+  async getLeaveApplication(id: number): Promise<LeaveApplication | undefined> {
+    const application = this.leaveApplications.get(id);
+    if (!application) return undefined;
+    
+    return {
+      ...application,
+      leaveType: this.leaveTypes.get(application.leaveTypeId)
+    };
+  }
+
+  async getLeaveApplicationsByEmployee(employeeId: number): Promise<(LeaveApplication & { leaveType: LeaveType })[]> {
+    const applications = Array.from(this.leaveApplications.values())
+      .filter(application => application.employeeId === employeeId)
+      .sort((a, b) => {
+        // Sort by application id if createdAt is not available
+        if (!a.createdAt || !b.createdAt) {
+          return b.id - a.id;
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    
+    return applications.map(application => ({
+      ...application,
+      leaveType: this.leaveTypes.get(application.leaveTypeId)!
+    }));
+  }
+
+  async createLeaveApplication(leaveApplication: InsertLeaveApplication): Promise<LeaveApplication> {
+    const id = this.leaveApplicationIdCounter++;
+    const newApplication: LeaveApplication = {
+      ...leaveApplication,
+      id,
+      status: "pending",
+      createdAt: new Date(),
+      approvedById: null,
+      approvedAt: null,
+      rejectionReason: null,
+      isHalfDay: leaveApplication.isHalfDay || false
+    };
+    this.leaveApplications.set(id, newApplication);
+    
+    return {
+      ...newApplication,
+      leaveType: this.leaveTypes.get(newApplication.leaveTypeId)
+    };
+  }
+
+  async updateLeaveApplication(id: number, leaveApplication: Partial<LeaveApplication>): Promise<LeaveApplication | undefined> {
+    const application = this.leaveApplications.get(id);
+    if (!application) return undefined;
+    
+    const updatedApplication = { ...application, ...leaveApplication };
+    this.leaveApplications.set(id, updatedApplication);
+    
+    return {
+      ...updatedApplication,
+      leaveType: this.leaveTypes.get(updatedApplication.leaveTypeId)
+    };
+  }
+
+  // Leave summary methods
+  async getEmployeeLeaveSummary(employeeId: number): Promise<{
+    allocations: {
+      leaveType: LeaveType;
+      allocated: number;
+      used: number;
+      pending: number;
+      remaining: number;
+    }[];
+    totalAllocated: number;
+    totalUsed: number;
+    totalPending: number;
+    totalRemaining: number;
+  }> {
+    const allocations = await this.getLeaveAllocationsByEmployee(employeeId);
+    const applications = await this.getLeaveApplicationsByEmployee(employeeId);
+    
+    let totalAllocated = 0;
+    let totalUsed = 0;
+    let totalPending = 0;
+    let totalRemaining = 0;
+    
+    const allocationSummary = allocations.map(allocation => {
+      const leaveType = allocation.leaveType;
+      const allocatedDays = Number(allocation.allocatedDays);
+      
+      // Count used days (approved applications)
+      const usedApplications = applications.filter(app => 
+        app.leaveTypeId === allocation.leaveTypeId && app.status === "approved"
+      );
+      const usedDays = usedApplications.reduce((total, app) => {
+        const start = new Date(app.fromDate);
+        const end = new Date(app.toDate);
+        const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return total + (app.isHalfDay ? days * 0.5 : days);
+      }, 0);
+      
+      // Count pending days
+      const pendingApplications = applications.filter(app => 
+        app.leaveTypeId === allocation.leaveTypeId && app.status === "pending"
+      );
+      const pendingDays = pendingApplications.reduce((total, app) => {
+        const start = new Date(app.fromDate);
+        const end = new Date(app.toDate);
+        const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return total + (app.isHalfDay ? days * 0.5 : days);
+      }, 0);
+      
+      // Calculate remaining days
+      const remainingDays = allocatedDays - usedDays - pendingDays;
+      
+      // Add to totals
+      totalAllocated += allocatedDays;
+      totalUsed += usedDays;
+      totalPending += pendingDays;
+      totalRemaining += remainingDays;
+      
+      return {
+        leaveType,
+        allocated: allocatedDays,
+        used: usedDays,
+        pending: pendingDays,
+        remaining: remainingDays
+      };
+    });
+    
+    return {
+      allocations: allocationSummary,
+      totalAllocated,
+      totalUsed,
+      totalPending,
+      totalRemaining
+    };
   }
 
   // Summary methods
@@ -366,6 +605,67 @@ export class MemStorage implements IStorage {
     ];
     
     sarahEntries.forEach(entry => this.createTimeEntry(entry));
+    
+    // Add leave types
+    const leaveTypes = [
+      { name: "Annual Leave", description: "Regular vacation time", color: "#10B981" },
+      { name: "Sick Leave", description: "Time off due to illness", color: "#EF4444" },
+      { name: "Personal Leave", description: "Time off for personal matters", color: "#F59E0B" },
+      { name: "Maternity/Paternity Leave", description: "Leave for new parents", color: "#8B5CF6" },
+      { name: "Bereavement Leave", description: "Leave due to death in family", color: "#6B7280" }
+    ];
+    
+    leaveTypes.forEach(type => this.createLeaveType(type));
+    
+    // Add leave allocations for Sarah (demo user)
+    const sarahAllocations = [
+      { employeeId: 1, leaveTypeId: 1, allocatedDays: "21", year: 2025 }, // Annual Leave
+      { employeeId: 1, leaveTypeId: 2, allocatedDays: "10", year: 2025 }, // Sick Leave
+      { employeeId: 1, leaveTypeId: 3, allocatedDays: "5", year: 2025 },  // Personal Leave
+      { employeeId: 1, leaveTypeId: 4, allocatedDays: "0", year: 2025 },  // Maternity/Paternity Leave
+      { employeeId: 1, leaveTypeId: 5, allocatedDays: "3", year: 2025 }   // Bereavement Leave
+    ];
+    
+    sarahAllocations.forEach(allocation => this.createLeaveAllocation(allocation));
+    
+    // Add a few leave applications for Sarah
+    const leaveStart = new Date();
+    leaveStart.setDate(leaveStart.getDate() + 10); // 10 days from now
+    
+    const leaveEnd = new Date(leaveStart);
+    leaveEnd.setDate(leaveEnd.getDate() + 4); // 5 day leave
+    
+    const sarahLeaves = [
+      { 
+        employeeId: 1, 
+        leaveTypeId: 1, 
+        fromDate: format(leaveStart, "yyyy-MM-dd"), 
+        toDate: format(leaveEnd, "yyyy-MM-dd"), 
+        reason: "Family vacation", 
+        status: "pending", 
+        isHalfDay: false 
+      },
+      { 
+        employeeId: 1, 
+        leaveTypeId: 2, 
+        fromDate: format(new Date(Date.now() - 15 * 86400000), "yyyy-MM-dd"), // 15 days ago
+        toDate: format(new Date(Date.now() - 13 * 86400000), "yyyy-MM-dd"),   // 13 days ago
+        reason: "Flu", 
+        status: "approved", 
+        isHalfDay: false 
+      },
+      { 
+        employeeId: 1, 
+        leaveTypeId: 3, 
+        fromDate: format(new Date(Date.now() + 20 * 86400000), "yyyy-MM-dd"), // 20 days from now
+        toDate: format(new Date(Date.now() + 20 * 86400000), "yyyy-MM-dd"),   // Same day
+        reason: "Personal appointment", 
+        status: "pending", 
+        isHalfDay: true 
+      }
+    ];
+    
+    sarahLeaves.forEach(leave => this.createLeaveApplication(leave));
   }
 }
 

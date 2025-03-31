@@ -53,6 +53,58 @@ export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
   createdAt: true,
 });
 
+// Leave types table
+export const leaveTypes = pgTable("leave_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#2563EB"), // Color for UI display
+});
+
+export const insertLeaveTypeSchema = createInsertSchema(leaveTypes).omit({
+  id: true,
+});
+
+// Employee leave allocations table
+export const leaveAllocations = pgTable("leave_allocations", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull().references(() => employees.id),
+  leaveTypeId: integer("leave_type_id").notNull().references(() => leaveTypes.id),
+  allocatedDays: decimal("allocated_days", { precision: 4, scale: 1 }).notNull(),
+  year: integer("year").notNull(), // The year for this allocation
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertLeaveAllocationSchema = createInsertSchema(leaveAllocations).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Leave applications table
+export const leaveApplications = pgTable("leave_applications", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull().references(() => employees.id),
+  leaveTypeId: integer("leave_type_id").notNull().references(() => leaveTypes.id),
+  fromDate: text("from_date").notNull(), // YYYY-MM-DD format
+  toDate: text("to_date").notNull(),     // YYYY-MM-DD format
+  isHalfDay: boolean("is_half_day").default(false),
+  reason: text("reason").notNull(),
+  status: text("status").default("pending"), // pending, approved, rejected
+  approvedById: integer("approved_by_id").references(() => employees.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertLeaveApplicationSchema = createInsertSchema(leaveApplications).omit({
+  id: true,
+  status: true,
+  approvedById: true,
+  approvedAt: true,
+  rejectionReason: true,
+  createdAt: true,
+});
+
 // Types
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
@@ -64,3 +116,14 @@ export type TimeEntry = typeof timeEntries.$inferSelect & {
   project?: Project;
 };
 export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+
+export type LeaveType = typeof leaveTypes.$inferSelect;
+export type InsertLeaveType = z.infer<typeof insertLeaveTypeSchema>;
+
+export type LeaveAllocation = typeof leaveAllocations.$inferSelect;
+export type InsertLeaveAllocation = z.infer<typeof insertLeaveAllocationSchema>;
+
+export type LeaveApplication = typeof leaveApplications.$inferSelect & {
+  leaveType?: LeaveType;
+};
+export type InsertLeaveApplication = z.infer<typeof insertLeaveApplicationSchema>;
