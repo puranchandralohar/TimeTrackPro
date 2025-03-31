@@ -16,7 +16,7 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <header className="bg-red border-b border-border h-16 flex items-center justify-between px-4 md:px-6">
-      <div className="flex items-center md:hidden">
+      <div className="flex items-center">
         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="mr-2">
