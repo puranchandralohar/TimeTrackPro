@@ -1,6 +1,14 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { ClockIcon, BarChart2Icon, FolderIcon, UserIcon, SettingsIcon, LogOutIcon } from "lucide-react";
+import { 
+  ClockIcon, 
+  BarChart2Icon, 
+  FolderIcon, 
+  UserIcon, 
+  SettingsIcon, 
+  LogOutIcon,
+  CalendarIcon 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { Separator } from "@/components/ui/separator";
@@ -38,6 +46,7 @@ export function Sidebar() {
         <div className="px-4 py-2 text-sm font-medium text-muted-foreground uppercase">Main</div>
         
         <NavItem href="/" icon={ClockIcon}>Time Tracking</NavItem>
+        <NavItem href="/leave" icon={CalendarIcon}>Leave Management</NavItem>
         <NavItem href="/reports" icon={BarChart2Icon}>Reports</NavItem>
         <NavItem href="/projects" icon={FolderIcon}>Projects</NavItem>
         

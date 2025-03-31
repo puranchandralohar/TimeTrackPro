@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { ClockIcon, BarChart2Icon, FolderIcon, UserIcon } from "lucide-react";
+import { ClockIcon, BarChart2Icon, FolderIcon, UserIcon, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileNav() {
@@ -25,7 +25,7 @@ export function MobileNav() {
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-10">
       <div className="flex items-center justify-around">
         <NavItem href="/" icon={ClockIcon}>Time</NavItem>
-        <NavItem href="/reports" icon={BarChart2Icon}>Reports</NavItem>
+        <NavItem href="/leave" icon={CalendarIcon}>Leave</NavItem>
         <NavItem href="/projects" icon={FolderIcon}>Projects</NavItem>
         <NavItem href="/profile" icon={UserIcon}>Profile</NavItem>
       </div>

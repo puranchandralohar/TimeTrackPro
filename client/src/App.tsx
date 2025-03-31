@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Profile from "@/pages/Profile";
 import Projects from "@/pages/Projects";
 import Reports from "@/pages/Reports";
+import Leave from "@/pages/Leave";
 import { AuthProvider } from "./lib/auth";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/projects" component={Projects} />
       <Route path="/reports" component={Reports} />
+      <Route path="/leave" component={Leave} />
       <Route component={NotFound} />
     </Switch>
   );
