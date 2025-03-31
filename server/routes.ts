@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertEmployeeSchema, insertTimeEntrySchema } from "@shared/schema";
+import { insertEmployeeSchema, insertTimeEntrySchema, insertProjectSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { format } from "date-fns";
@@ -140,6 +140,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     res.status(200).json(project);
+  });
+  
+  // Create new project
+  app.post("/api/projects", async (req: Request, res: Response) => {
+    try {
+      const projectData = insertProjectSchema.parse(req.body);
+      const project = await storage.createProject(projectData);
+      res.status(201).json(project);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
+  });
+  
+  // Update project
+  app.put("/api/projects/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const project = await storage.getProject(id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Validate and update
+      const updateSchema = insertProjectSchema.partial();
+      const updateData = updateSchema.parse(req.body);
+      
+      // For now, we'll just create an updateProject method in the interface
+      // that forwards to createProject with an ID
+      const updatedProject = {
+        ...project,
+        ...updateData
+      };
+      
+      await storage.createProject(updatedProject);
+      res.status(200).json(updatedProject);
+    } catch (error) {
+      return handleZodError(error, res);
+    }
   });
   
   // ------ TIME ENTRY ROUTES ------

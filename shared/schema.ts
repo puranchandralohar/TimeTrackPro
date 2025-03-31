@@ -23,8 +23,14 @@ export const insertEmployeeSchema = createInsertSchema(employees).omit({
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  description: text("description"),
+  channelName: text("channel_name"),
+  channelId: text("channel_id"),
+  projectManagerEmail: text("project_manager_email"),
+  clientName: text("client_name"),
   active: boolean("active").default(true),
+  priority: text("priority").default("P2"), // P0, P1, P2, P3
+  budget: text("budget"),
+  description: text("description"),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({

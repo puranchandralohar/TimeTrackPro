@@ -73,7 +73,14 @@ export function TimeEntryForm() {
   });
 
   function onSubmit(data: any) {
+    // Convert projectId to number
+    data.projectId = parseInt(data.projectId, 10);
+    // Make sure employeeId is set
     data.employeeId = employee?.id;
+    // Make sure hours is a number
+    if (typeof data.hours === 'string') {
+      data.hours = parseFloat(data.hours);
+    }
     createTimeEntryMutation.mutate(data);
   }
 

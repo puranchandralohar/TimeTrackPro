@@ -101,10 +101,16 @@ export class MemStorage implements IStorage {
   async createProject(insertProject: InsertProject): Promise<Project> {
     const id = this.projectIdCounter++;
     const project: Project = { 
-      ...insertProject, 
-      id, 
+      id,
+      name: insertProject.name,
       description: insertProject.description || null,
-      active: insertProject.active === undefined ? true : insertProject.active
+      channelName: insertProject.channelName || null,
+      channelId: insertProject.channelId || null, 
+      projectManagerEmail: insertProject.projectManagerEmail || null,
+      clientName: insertProject.clientName || null,
+      active: insertProject.active === undefined ? true : insertProject.active,
+      priority: insertProject.priority || null,
+      budget: insertProject.budget || null
     };
     this.projects.set(id, project);
     return project;
@@ -283,11 +289,61 @@ export class MemStorage implements IStorage {
     
     // Add projects
     const projects = [
-      { name: "Website Redesign", description: "Overhaul of company website", active: true },
-      { name: "Mobile App", description: "Mobile app development for clients", active: true },
-      { name: "Cloud Migration", description: "Moving infrastructure to the cloud", active: true },
-      { name: "Data Analysis", description: "Quarterly data analysis project", active: true },
-      { name: "Internal Tools", description: "Building internal productivity tools", active: true }
+      { 
+        name: "Website Redesign", 
+        description: "Overhaul of company website", 
+        active: true, 
+        channelName: "project-website",
+        channelId: "CH001",
+        projectManagerEmail: "sarah@example.com",
+        clientName: "Acme Corp",
+        priority: "P1",
+        budget: "$25,000"
+      },
+      { 
+        name: "Mobile App", 
+        description: "Mobile app development for clients", 
+        active: true,
+        channelName: "project-mobile",
+        channelId: "CH002",
+        projectManagerEmail: "john@example.com",
+        clientName: "Beta Industries",
+        priority: "P0",
+        budget: "$120,000"
+      },
+      { 
+        name: "Cloud Migration", 
+        description: "Moving infrastructure to the cloud", 
+        active: true,
+        channelName: "project-cloud",
+        channelId: "CH003",
+        projectManagerEmail: "sarah@example.com",
+        clientName: "Gamma Tech",
+        priority: "P2",
+        budget: "$80,000"
+      },
+      { 
+        name: "Data Analysis", 
+        description: "Quarterly data analysis project", 
+        active: true,
+        channelName: "project-data",
+        channelId: "CH004",
+        projectManagerEmail: "john@example.com",
+        clientName: "Delta Systems",
+        priority: "P3",
+        budget: "$15,000"
+      },
+      { 
+        name: "Internal Tools", 
+        description: "Building internal productivity tools", 
+        active: true,
+        channelName: "project-internal",
+        channelId: "CH005",
+        projectManagerEmail: "sarah@example.com",
+        clientName: "Internal",
+        priority: "P2",
+        budget: "$40,000"
+      }
     ];
     
     projects.forEach(project => this.createProject(project));
