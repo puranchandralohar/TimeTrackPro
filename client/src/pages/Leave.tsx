@@ -34,6 +34,11 @@ const leaveSchema = z.object({
   }),
   reason: z.string().min(3, "Reason is required"),
   isHalfDay: z.boolean().default(false),
+}).refine((data) => {
+  return data.toDate >= data.fromDate;
+}, {
+  message: "To date must be after or equal to From date",
+  path: ["toDate"],
 });
 
 export default function Leave() {
@@ -47,19 +52,10 @@ export default function Leave() {
     resolver: zodResolver(leaveSchema),
     defaultValues: {
       leaveTypeId: undefined,
-      fromDate: undefined,
-      toDate: undefined,
+      fromDate: new Date(),
+      toDate: new Date(),
       reason: "",
       isHalfDay: false,
-    },
-  });
-
-  // Fetch leave types
-  const { data: leaveTypes = [] } = useQuery({
-    queryKey: ["/api/leave-types"],
-    queryFn: async () => {
-      const response = await apiRequest("/api/leave-types");
-      return response as LeaveType[];
     },
   });
 
@@ -78,36 +74,35 @@ export default function Leave() {
     totalRemaining: number;
   };
 
+  // Fetch leave types
+  const { data: leaveTypes = [] } = useQuery<LeaveType[]>({
+    queryKey: ["/api/leave-types"],
+    queryFn: () => apiRequest<LeaveType[]>("/api/leave-types"),
+  });
+
   // Fetch leave allocations
-  const { data: leaveSummary } = useQuery({
+  const { data: leaveSummary } = useQuery<LeaveSummary>({
     queryKey: ["/api/leave-summary"],
-    queryFn: async () => {
-      const response = await apiRequest("/api/leave-summary");
-      return response as LeaveSummary;
-    },
+    queryFn: () => apiRequest<LeaveSummary>("/api/leave-summary"),
   });
 
   // Fetch leave applications
-  const { data: leaveApplications = [] } = useQuery({
+  const { data: leaveApplications = [] } = useQuery<LeaveApplication[]>({
     queryKey: ["/api/leave-applications"],
-    queryFn: async () => {
-      const response = await apiRequest("/api/leave-applications");
-      return response as LeaveApplication[];
-    },
+    queryFn: () => apiRequest<LeaveApplication[]>("/api/leave-applications"),
   });
 
   // Create leave application mutation
   const createLeaveMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof leaveSchema>) => {
-      return await apiRequest("/api/leave-applications", {
+    mutationFn: (data: z.infer<typeof leaveSchema>) => 
+      apiRequest("/api/leave-applications", {
         method: "POST",
         body: JSON.stringify({
           ...data,
           fromDate: format(data.fromDate, "yyyy-MM-dd"),
           toDate: format(data.toDate, "yyyy-MM-dd"),
         }),
-      } as RequestInit);
-    },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leave-applications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/leave-summary"] });
@@ -364,10 +359,10 @@ export default function Leave() {
                         <div key={application.id} className="border rounded-md p-4">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
                             <div className="text-lg font-medium">
-                              {application.leaveType?.name}
+                              {application.leaveType?.name || "Unknown"}
                             </div>
                             <div>
-                              {formatStatus(application.status)}
+                              {formatStatus(application.status || "pending")}
                             </div>
                           </div>
                           <div className="text-sm text-gray-500 mb-2">

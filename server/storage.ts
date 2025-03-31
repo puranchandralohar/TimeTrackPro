@@ -612,7 +612,11 @@ export class MemStorage implements IStorage {
       { name: "Sick Leave", description: "Time off due to illness", color: "#EF4444" },
       { name: "Personal Leave", description: "Time off for personal matters", color: "#F59E0B" },
       { name: "Maternity/Paternity Leave", description: "Leave for new parents", color: "#8B5CF6" },
-      { name: "Bereavement Leave", description: "Leave due to death in family", color: "#6B7280" }
+      { name: "Bereavement Leave", description: "Leave due to death in family", color: "#6B7280" },
+      { name: "Wellness Leave", description: "Time off for wellness activities", color: "#3B82F6" },
+      { name: "Festival Leave", description: "Leave for cultural or religious festivals", color: "#EC4899" },
+      { name: "Casual Leave", description: "Short-notice unplanned leave", color: "#6366F1" },
+      { name: "LWP (Leave Without Pay)", description: "Unpaid time off", color: "#9CA3AF" }
     ];
     
     leaveTypes.forEach(type => this.createLeaveType(type));
@@ -623,7 +627,11 @@ export class MemStorage implements IStorage {
       { employeeId: 1, leaveTypeId: 2, allocatedDays: "10", year: 2025 }, // Sick Leave
       { employeeId: 1, leaveTypeId: 3, allocatedDays: "5", year: 2025 },  // Personal Leave
       { employeeId: 1, leaveTypeId: 4, allocatedDays: "0", year: 2025 },  // Maternity/Paternity Leave
-      { employeeId: 1, leaveTypeId: 5, allocatedDays: "3", year: 2025 }   // Bereavement Leave
+      { employeeId: 1, leaveTypeId: 5, allocatedDays: "3", year: 2025 },  // Bereavement Leave
+      { employeeId: 1, leaveTypeId: 6, allocatedDays: "2", year: 2025 },  // Wellness Leave
+      { employeeId: 1, leaveTypeId: 7, allocatedDays: "3", year: 2025 },  // Festival Leave
+      { employeeId: 1, leaveTypeId: 8, allocatedDays: "5", year: 2025 },  // Casual Leave
+      { employeeId: 1, leaveTypeId: 9, allocatedDays: "0", year: 2025 }   // LWP
     ];
     
     sarahAllocations.forEach(allocation => this.createLeaveAllocation(allocation));

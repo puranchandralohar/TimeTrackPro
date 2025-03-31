@@ -9,14 +9,12 @@ export function MobileNav() {
     const isActive = location === href;
     
     return (
-      <Link href={href}>
-        <a className={cn(
-          "flex flex-col items-center py-2",
-          isActive ? "text-primary" : "text-muted-foreground"
-        )}>
-          <Icon className="h-6 w-6" />
-          <span className="text-xs mt-1">{children}</span>
-        </a>
+      <Link href={href} className={cn(
+        "flex flex-col items-center py-2",
+        isActive ? "text-primary" : "text-muted-foreground"
+      )}>
+        <Icon className="h-6 w-6" />
+        <span className="text-xs mt-1">{children}</span>
       </Link>
     );
   };
