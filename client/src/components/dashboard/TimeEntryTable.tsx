@@ -60,19 +60,16 @@ export function TimeEntryTable() {
     queryKey: ['/api/time-entries', employee?.id],
   });
   
-  const { data: projects, isLoading: projectsLoading } = useQuery({
+  const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ['/api/projects'],
   });
 
   const form = useForm({
-    resolver: zodResolver(insertTimeEntrySchema.extend({
-      hours: (schema) => schema.min(0.1, { message: "Hours must be greater than 0" }),
-      description: (schema) => schema.min(3, { message: "Description must be at least 3 characters" }),
-    })),
+    resolver: zodResolver(insertTimeEntrySchema),
     defaultValues: {
       date: "",
       projectId: "",
-      hours: undefined,
+      hours: "",
       description: "",
       employeeId: employee?.id
     },
@@ -224,7 +221,7 @@ export function TimeEntryTable() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Projects</SelectItem>
-                {!projectsLoading && projects?.map((project: any) => (
+                {!projectsLoading && projects && projects.length > 0 && projects.map((project: any) => (
                   <SelectItem key={project.id} value={project.id.toString()}>
                     {project.name}
                   </SelectItem>
@@ -368,7 +365,7 @@ export function TimeEntryTable() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {!projectsLoading && projects?.map((project: any) => (
+                        {!projectsLoading && projects && projects.length > 0 && projects.map((project: any) => (
                           <SelectItem key={project.id} value={project.id.toString()}>
                             {project.name}
                           </SelectItem>
