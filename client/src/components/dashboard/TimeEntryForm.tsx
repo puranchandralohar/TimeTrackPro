@@ -73,14 +73,10 @@ export function TimeEntryForm() {
   });
 
   function onSubmit(data: any) {
-    // Convert projectId to number
-    data.projectId = parseInt(data.projectId, 10);
     // Make sure employeeId is set
     data.employeeId = employee?.id;
-    // Make sure hours is a number
-    if (typeof data.hours === 'string') {
-      data.hours = parseFloat(data.hours);
-    }
+    // ProjectId is already converted in the form field
+    // Hours is already handled correctly
     createTimeEntryMutation.mutate(data);
   }
 
@@ -120,8 +116,11 @@ export function TimeEntryForm() {
                   <FormItem>
                     <FormLabel>Project</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      onValueChange={(value) => {
+                        // Convert the string to a number right here
+                        field.onChange(parseInt(value, 10));
+                      }}
+                      defaultValue={field.value ? field.value.toString() : undefined}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -157,8 +156,12 @@ export function TimeEntryForm() {
                         placeholder="0.0" 
                         min="0" 
                         step="0.25" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value}
+                        onChange={(e) => {
+                          const stringValue = e.target.value;
+                          // Convert to string for storage, server will handle as decimal
+                          field.onChange(stringValue);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
