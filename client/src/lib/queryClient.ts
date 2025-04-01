@@ -9,7 +9,9 @@ async function throwIfResNotOk(res: Response) {
 
 export const apiRequest = async (method: string, url: string, data?: any) => {
   try {
-    // Ensure URL starts with /api
+    if (!url) {
+      throw new Error('URL is required');
+    }
     const apiUrl = url.startsWith('/api') ? url : `/api${url}`;
     const response = await fetch(apiUrl, {
       method: method.toUpperCase(),
