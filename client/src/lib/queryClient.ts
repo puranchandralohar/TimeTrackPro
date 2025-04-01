@@ -7,7 +7,25 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest<T = any>(
+export const apiRequest = async (method: string, url: string, data?: any) => {
+  const baseUrl = 'http://0.0.0.0:5000';
+  const response = await fetch(`${baseUrl}${url}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: 'include',
+  });
+  await throwIfResNotOk(response);
+  if (response.status === 204) {
+    return null;
+  }
+  return response.json();
+};
+
+
+export async function apiRequestGeneric<T = any>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {

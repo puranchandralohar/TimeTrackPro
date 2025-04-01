@@ -52,10 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await apiRequest("POST", "/api/auth/logout", {});
-      setEmployee(null);
-      queryClient.clear();
     } catch (error) {
       console.error("Failed to logout", error);
+    } finally {
+      // Always clear state even if request fails
+      setEmployee(null);
+      queryClient.clear();
+      window.location.href = '/login';
     }
   };
 
