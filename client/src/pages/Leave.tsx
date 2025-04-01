@@ -82,8 +82,8 @@ export default function Leave() {
 
   // Fetch leave allocations
   const { data: leaveSummary } = useQuery<LeaveSummary>({
-    queryKey: ["/leave-summary"],
-    queryFn: () => apiRequest("GET", "/leave-summary"),
+    queryKey: ["/api/leave-summary"],
+    queryFn: () => apiRequest<LeaveSummary>("/api/leave-summary"),
   });
 
   // Fetch leave applications
