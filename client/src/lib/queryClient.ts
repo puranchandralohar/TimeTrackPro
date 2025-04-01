@@ -9,8 +9,8 @@ async function throwIfResNotOk(res: Response) {
 
 export const apiRequest = async (method: string, url: string, data?: any) => {
   try {
-    const response = await fetch(url, {
-      method,
+    const response = await fetch(`/api${url}`, {
+      method: method.toUpperCase(),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
