@@ -77,19 +77,19 @@ export default function Leave() {
   // Fetch leave types
   const { data: leaveTypes = [] } = useQuery<LeaveType[]>({
     queryKey: ["/api/leave-types"],
-    queryFn: () => apiRequest<LeaveType[]>("/api/leave-types"),
+    queryFn: () => apiRequest("GET", "/leave-types"),
   });
 
   // Fetch leave allocations
   const { data: leaveSummary } = useQuery<LeaveSummary>({
     queryKey: ["/api/leave-summary"],
-    queryFn: () => apiRequest<LeaveSummary>("/api/leave-summary"),
+    queryFn: () => apiRequest("GET", "/leave-summary"),
   });
 
   // Fetch leave applications
   const { data: leaveApplications = [] } = useQuery<LeaveApplication[]>({
     queryKey: ["/api/leave-applications"],
-    queryFn: () => apiRequest<LeaveApplication[]>("/api/leave-applications"),
+    queryFn: () => apiRequest("GET", "/leave-applications"),
   });
 
   // Create leave application mutation
