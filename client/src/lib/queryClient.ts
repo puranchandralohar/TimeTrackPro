@@ -8,20 +8,32 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export const apiRequest = async (method: string, url: string, data?: any) => {
-  const baseUrl = 'http://0.0.0.0:5000';
-  const response = await fetch(`${baseUrl}${url}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: 'include',
-  });
-  await throwIfResNotOk(response);
-  if (response.status === 204) {
-    return null;
+  try {
+    const baseUrl = 'http://0.0.0.0:5000';
+    const response = await fetch(`${baseUrl}${url}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || response.statusText);
+    }
+    
+    if (response.status === 204) {
+      return null;
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('API Request Error:', error);
+    throw error;
   }
-  return response.json();
 };
 
 
